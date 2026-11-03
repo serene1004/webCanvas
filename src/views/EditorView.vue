@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import {
   Aperture,
@@ -74,6 +74,25 @@ const {
 } = useEditor();
 
 onMounted(() => startEditor(route.query.mode === 'draw' ? 'draw' : 'image'));
+
+const toolSettingsTitle = computed(() =>
+  activeTool.value === 'eraser'
+    ? 'Eraser'
+    : activeTool.value === 'blur'
+      ? 'Blur'
+      : 'Brush',
+);
+const statusMessage = computed(() =>
+  spaceHeld.value
+    ? 'Drag to pan the canvas.'
+    : activeTool.value === 'eraser'
+      ? 'Eraser makes image areas transparent.'
+      : activeTool.value === 'blur'
+        ? 'Drag to blur a specific image area.'
+        : activeTool.value === 'pen'
+          ? 'Drag on the image to draw.'
+          : 'Wheel to zoom · Hold Space and drag to pan.',
+);
 
 function clearCanvasHover() {
   hoverHandle.value = null;
@@ -306,7 +325,7 @@ function clearCanvasHover() {
           ]"
         >
           <div class="panel-title">
-            {{ activeTool === 'eraser' ? 'Eraser' : activeTool === 'blur' ? 'Blur' : 'Brush' }}
+            {{ toolSettingsTitle }}
           </div>
           <label v-if="activeTool === 'pen'"
             >Color <input v-model="brushColor" class="color-input" type="color"
@@ -358,17 +377,7 @@ function clearCanvasHover() {
     </section>
 
     <footer v-if="hasDocument" class="statusbar">
-      <span>{{
-        spaceHeld
-          ? 'Drag to pan the canvas.'
-          : activeTool === 'eraser'
-            ? 'Eraser makes image areas transparent.'
-            : activeTool === 'blur'
-              ? 'Drag to blur a specific image area.'
-              : activeTool === 'pen'
-                ? 'Drag on the image to draw.'
-                : 'Wheel to zoom · Hold Space and drag to pan.'
-      }}</span>
+      <span>{{ statusMessage }}</span>
       <div>
         <button type="button" aria-label="Zoom out" @click="zoom = Math.max(0.1, zoom - 0.1)">
           <Minus :size="14" /></button

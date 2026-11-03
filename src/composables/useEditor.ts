@@ -1408,6 +1408,28 @@ export function useEditor() {
     }
   }
 
+  async function onPaste(event: ClipboardEvent) {
+    if (
+      editorMode.value !== 'draw' ||
+      isImporting.value ||
+      overlayLayers.value.length >= MAX_OVERLAY_LAYERS ||
+      (event.target instanceof HTMLElement &&
+        event.target.matches('input, textarea, [contenteditable="true"]'))
+    )
+      return;
+    const file = Array.from(event.clipboardData?.items || [])
+      .find((item) => item.type.startsWith('image/'))
+      ?.getAsFile();
+    if (!file) return;
+    event.preventDefault();
+    isImporting.value = true;
+    try {
+      await readImage(file);
+    } finally {
+      isImporting.value = false;
+    }
+  }
+
   function onKeyUp(event: KeyboardEvent) {
     if (event.code === 'Space') spaceHeld.value = false;
   }
@@ -1416,6 +1438,7 @@ export function useEditor() {
     resizeObserver = new ResizeObserver(fit);
     if (stage.value) resizeObserver.observe(stage.value);
     window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('paste', onPaste);
     window.addEventListener('keyup', onKeyUp);
     window.addEventListener('blur', stagePointerUp);
   });
@@ -1423,6 +1446,7 @@ export function useEditor() {
     resizeObserver?.disconnect();
     if (renderFrame) cancelAnimationFrame(renderFrame);
     window.removeEventListener('keydown', onKeyDown);
+    window.removeEventListener('paste', onPaste);
     window.removeEventListener('keyup', onKeyUp);
     window.removeEventListener('blur', stagePointerUp);
   });
